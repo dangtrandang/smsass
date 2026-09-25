@@ -22,6 +22,12 @@
         android:title="@string/unarchive"
         app:showAsAction="always" />
     <item
+        android:id="@+id/restore_from_filtered"
+        android:icon="@drawable/ic_unarchive_vector"
+        android:showAsAction="always"
+        android:title="@string/restore_from_filtered"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/manage_people"
         android:showAsAction="never"
         android:title="@string/add_person"

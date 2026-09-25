@@ -12,6 +12,8 @@ import org.fossify.commons.helpers.SimpleContactsHelper
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.models.PhoneNumber
 import org.fossify.commons.models.SimpleContact
+import org.fossify.messages.extensions.config
+import org.fossify.messages.extensions.conversationsDB
 import org.fossify.messages.extensions.getConversations
 import org.fossify.messages.extensions.getNameFromAddress
 import org.fossify.messages.extensions.getNotificationBitmap
@@ -45,13 +47,18 @@ class SmsReceiver : BroadcastReceiver() {
                 val status = parts.last().status
                 val body = buildString { parts.forEach { append(it.messageBody.orEmpty()) } }
 
-                if (isMessageFilteredOut(appContext, body)) return@ensureBackgroundThread
-                if (appContext.isNumberBlocked(address)) return@ensureBackgroundThread
-                if (appContext.baseConfig.blockUnknownNumbers) {
+                val isKeywordBlocked = isMessageFilteredOut(appContext, body)
+                val isNumberBlocked = appContext.isNumberBlocked(address)
+                val isUnknownBlocked = if (appContext.baseConfig.blockUnknownNumbers) {
                     val privateCursor =
                         appContext.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
                     val result = SimpleContactsHelper(appContext).existsSync(address, privateCursor)
-                    if (result == ContactLookupResult.NotFound) return@ensureBackgroundThread
+                    result == ContactLookupResult.NotFound
+                } else false
+
+                val isBlocked = isKeywordBlocked || isNumberBlocked || isUnknownBlocked
+                if (isBlocked && !appContext.config.enableFilterTab) {
+                    return@ensureBackgroundThread
                 }
 
                 val date = System.currentTimeMillis()
@@ -66,7 +73,8 @@ class SmsReceiver : BroadcastReceiver() {
                     date = date,
                     threadId = threadId,
                     subscriptionId = subscriptionId,
-                    status = status
+                    status = status,
+                    isFiltered = isBlocked
                 )
             } finally {
                 pending.finish()
@@ -84,7 +92,8 @@ class SmsReceiver : BroadcastReceiver() {
         threadId: Long,
         type: Int = Telephony.Sms.MESSAGE_TYPE_INBOX,
         subscriptionId: Int,
-        status: Int
+        status: Int,
+        isFiltered: Boolean = false,
     ) {
         val photoUri = SimpleContactsHelper(context).getPhotoUriFromPhoneNumber(address)
         val bitmap = context.getNotificationBitmap(photoUri)
@@ -100,8 +109,17 @@ class SmsReceiver : BroadcastReceiver() {
             subscriptionId = subscriptionId
         )
 
-        context.getConversations(threadId).firstOrNull()?.let { conv ->
-            runCatching { context.insertOrUpdateConversation(conv) }
+        val conversation = context.getConversations(threadId).firstOrNull()
+        if (conversation != null) {
+            if (isFiltered) {
+                conversation.isFiltered = true
+            }
+            runCatching { context.insertOrUpdateConversation(conversation) }
+            if (isFiltered) {
+                context.conversationsDB.moveToFiltered(threadId)
+            }
+        } else if (isFiltered) {
+            context.conversationsDB.moveToFiltered(threadId)
         }
 
         val senderName = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true).use {
@@ -136,6 +154,12 @@ class SmsReceiver : BroadcastReceiver() {
         )
 
         context.messagesDB.insertOrUpdate(message)
+
+        if (isFiltered) {
+            refreshMessages()
+            refreshConversations()
+            return
+        }
 
         if (context.shouldUnarchive()) {
             context.updateConversationArchivedStatus(threadId, false)

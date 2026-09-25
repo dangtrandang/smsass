@@ -91,6 +91,10 @@ class Config(context: Context) : BaseConfig(context) {
         blockedKeywords = blockedKeywords.minus(keyword)
     }
 
+    var enableFilterTab: Boolean
+        get() = prefs.getBoolean(ENABLE_FILTER_TAB, true)
+        set(enableFilterTab) = prefs.edit().putBoolean(ENABLE_FILTER_TAB, enableFilterTab).apply()
+
     var exportSms: Boolean
         get() = prefs.getBoolean(EXPORT_SMS, true)
         set(exportSms) = prefs.edit().putBoolean(EXPORT_SMS, exportSms).apply()

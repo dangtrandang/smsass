@@ -156,6 +156,7 @@ import org.fossify.messages.extensions.subscriptionManagerCompat
 import org.fossify.messages.extensions.toArrayList
 import org.fossify.messages.extensions.toSortedMessages
 import org.fossify.messages.extensions.updateConversationArchivedStatus
+import org.fossify.messages.extensions.updateConversationFilteredStatus
 import org.fossify.messages.extensions.updateLastConversationMessage
 import org.fossify.messages.extensions.updateScheduledMessagesThreadId
 import org.fossify.messages.helpers.CAPTURE_AUDIO_INTENT
@@ -362,6 +363,8 @@ class ThreadActivity : SimpleActivity() {
                 threadItems.isNotEmpty() && conversation?.isArchived == false && !isRecycleBin && archiveAvailable
             findItem(R.id.unarchive).isVisible =
                 threadItems.isNotEmpty() && conversation?.isArchived == true && !isRecycleBin && archiveAvailable
+            findItem(R.id.restore_from_filtered).isVisible =
+                threadItems.isNotEmpty() && conversation?.isFiltered == true && !isRecycleBin
             findItem(R.id.rename_conversation).isVisible =
                 participants.size > 1 && conversation != null && !isRecycleBin
             findItem(R.id.conversation_details).isVisible = conversation != null && !isRecycleBin
@@ -395,6 +398,7 @@ class ThreadActivity : SimpleActivity() {
             R.id.restore -> askConfirmRestoreAll()
             R.id.archive -> archiveConversation()
             R.id.unarchive -> unarchiveConversation()
+            R.id.restore_from_filtered -> restoreFromFiltered()
             R.id.rename_conversation -> renameConversation()
             R.id.conversation_details -> launchConversationDetails(threadId)
             R.id.add_number_to_contact -> addNumberToContact()
@@ -1221,6 +1225,18 @@ class ThreadActivity : SimpleActivity() {
             runOnUiThread {
                 refreshConversations()
                 finish()
+            }
+        }
+    }
+
+    private fun restoreFromFiltered() {
+        ensureBackgroundThread {
+            updateConversationFilteredStatus(threadId, false)
+            conversation?.isFiltered = false
+            runOnUiThread {
+                toast(R.string.restored_from_filtered)
+                refreshConversations()
+                refreshMenuItems()
             }
         }
     }

@@ -12,6 +12,8 @@ import org.fossify.commons.helpers.ContactLookupResult
 import org.fossify.commons.helpers.SimpleContactsHelper
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.messages.R
+import org.fossify.messages.extensions.config
+import org.fossify.messages.extensions.conversationsDB
 import org.fossify.messages.extensions.getConversations
 import org.fossify.messages.extensions.getMMS
 import org.fossify.messages.extensions.getLatestMMS
@@ -28,18 +30,23 @@ import org.fossify.messages.models.Message
 class MmsReceiver : MmsReceivedReceiver() {
 
     override fun isAddressBlocked(context: Context, address: String): Boolean {
-        if (context.isNumberBlocked(address)) return true
-        if (context.baseConfig.blockUnknownNumbers) {
-            val privateCursor = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
-            val result = SimpleContactsHelper(context).existsSync(address, privateCursor)
-            return result == ContactLookupResult.NotFound
+        if (!context.config.enableFilterTab) {
+            if (context.isNumberBlocked(address)) return true
+            if (context.baseConfig.blockUnknownNumbers) {
+                val privateCursor = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
+                val result = SimpleContactsHelper(context).existsSync(address, privateCursor)
+                return result == ContactLookupResult.NotFound
+            }
         }
 
         return false
     }
 
     override fun isContentBlocked(context: Context, content: String): Boolean {
-        return isMessageFilteredOut(context, content)
+        if (!context.config.enableFilterTab) {
+            return isMessageFilteredOut(context, content)
+        }
+        return false
     }
 
     override fun onMessageReceived(context: Context, messageUri: Uri?) {
@@ -78,6 +85,34 @@ class MmsReceiver : MmsReceivedReceiver() {
         }
 
 
+        val isKeywordBlocked = isMessageFilteredOut(context, mms.body)
+        val isNumberBlocked = context.isNumberBlocked(address)
+        val isUnknownBlocked = if (context.baseConfig.blockUnknownNumbers) {
+            val privateCursor = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
+            val result = SimpleContactsHelper(context).existsSync(address, privateCursor)
+            result == ContactLookupResult.NotFound
+        } else false
+        val isFiltered = context.config.enableFilterTab && (isKeywordBlocked || isNumberBlocked || isUnknownBlocked)
+
+        val conversation = context.getConversations(mms.threadId).firstOrNull()
+        if (conversation != null) {
+            if (isFiltered) {
+                conversation.isFiltered = true
+            }
+            runCatching { context.insertOrUpdateConversation(conversation) }
+            if (isFiltered) {
+                context.conversationsDB.moveToFiltered(mms.threadId)
+            }
+        } else if (isFiltered) {
+            context.conversationsDB.moveToFiltered(mms.threadId)
+        }
+
+        if (isFiltered) {
+            refreshMessages()
+            refreshConversations()
+            return
+        }
+
         val senderName = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true).use {
             context.getNameFromAddress(address, it)
         }
@@ -92,8 +127,6 @@ class MmsReceiver : MmsReceivedReceiver() {
             bitmap = glideBitmap
         )
 
-        val conversation = context.getConversations(mms.threadId).firstOrNull() ?: return
-        runCatching { context.insertOrUpdateConversation(conversation) }
         if (context.shouldUnarchive()) {
             context.updateConversationArchivedStatus(mms.threadId, false)
         }

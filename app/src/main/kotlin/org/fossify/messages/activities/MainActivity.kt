@@ -73,11 +73,15 @@ import org.fossify.messages.models.SearchResult
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import com.google.android.material.tabs.TabLayout
 
 class MainActivity : SimpleActivity() {
     override var isSearchBarEnabled = true
     
     private val MAKE_DEFAULT_APP_REQUEST = 1
+    private val TAB_INBOX = 0
+    private val TAB_FILTERED = 1
+    private var currentTab = TAB_INBOX
 
     private var storedTextColor = 0
     private var storedFontSize = 0
@@ -132,6 +136,9 @@ class MainActivity : SimpleActivity() {
         binding.conversationsFastscroller.updateColors(properPrimaryColor)
         binding.conversationsProgressBar.setIndicatorColor(properPrimaryColor)
         binding.conversationsProgressBar.trackColor = properPrimaryColor.adjustAlpha(LOWER_ALPHA)
+        setupTabs()
+        updateTabColors()
+        updateTabBadges()
         checkShortcut()
     }
 
@@ -276,6 +283,7 @@ class MainActivity : SimpleActivity() {
     private fun initMessenger() {
         checkWhatsNewDialog()
         storeStateVariables()
+        setupTabs()
         getCachedConversations()
         binding.noConversationsPlaceholder2.setOnClickListener {
             launchNewConversation()
@@ -289,7 +297,13 @@ class MainActivity : SimpleActivity() {
     private fun getCachedConversations() {
         ensureBackgroundThread {
             val conversations = try {
-                conversationsDB.getNonArchived().toMutableList() as ArrayList<Conversation>
+                if (config.enableFilterTab && currentTab == TAB_FILTERED) {
+                    conversationsDB.getFiltered().toMutableList() as ArrayList<Conversation>
+                } else if (config.enableFilterTab) {
+                    conversationsDB.getNonArchived().toMutableList() as ArrayList<Conversation>
+                } else {
+                    conversationsDB.getAllNonArchived().toMutableList() as ArrayList<Conversation>
+                }
             } catch (_: Exception) {
                 ArrayList()
             }
@@ -300,10 +314,17 @@ class MainActivity : SimpleActivity() {
                 listOf()
             }
 
+            val filtered = try {
+                conversationsDB.getFiltered()
+            } catch (_: Exception) {
+                listOf()
+            }
+
             runOnUiThread {
                 setupConversations(conversations, cached = true)
+                updateTabBadges()
                 getNewConversations(
-                    (conversations + archived).toMutableList() as ArrayList<Conversation>
+                    (conversations + archived + filtered).distinctBy { it.threadId }.toMutableList() as ArrayList<Conversation>
                 )
             }
             conversations.forEach {
@@ -364,9 +385,20 @@ class MainActivity : SimpleActivity() {
                 }
             }
 
-            val allConversations = conversationsDB.getNonArchived() as ArrayList<Conversation>
+            val allConversations = try {
+                if (config.enableFilterTab && currentTab == TAB_FILTERED) {
+                    conversationsDB.getFiltered().toMutableList() as ArrayList<Conversation>
+                } else if (config.enableFilterTab) {
+                    conversationsDB.getNonArchived().toMutableList() as ArrayList<Conversation>
+                } else {
+                    conversationsDB.getAllNonArchived().toMutableList() as ArrayList<Conversation>
+                }
+            } catch (_: Exception) {
+                ArrayList()
+            }
             runOnUiThread {
                 setupConversations(allConversations)
+                updateTabBadges()
             }
 
             if (config.appRunCount == 1) {
@@ -445,8 +477,101 @@ class MainActivity : SimpleActivity() {
     private fun showOrHidePlaceholder(show: Boolean) {
         binding.conversationsFastscroller.beGoneIf(show)
         binding.noConversationsPlaceholder.beVisibleIf(show)
-        binding.noConversationsPlaceholder.text = getString(R.string.no_conversations_found)
-        binding.noConversationsPlaceholder2.beVisibleIf(show)
+        val isFilteredTab = config.enableFilterTab && currentTab == TAB_FILTERED
+        if (isFilteredTab) {
+            binding.noConversationsPlaceholder.text = getString(R.string.no_filtered_conversations_found)
+            binding.noConversationsPlaceholder2.beGone()
+            binding.conversationsFab.beGone()
+        } else {
+            binding.noConversationsPlaceholder.text = getString(R.string.no_conversations_found)
+            binding.noConversationsPlaceholder2.beVisibleIf(show)
+            binding.conversationsFab.beVisible()
+        }
+    }
+
+    private fun setupTabs() {
+        if (!config.enableFilterTab) {
+            binding.mainTabs.beGone()
+            currentTab = TAB_INBOX
+            return
+        }
+
+        binding.mainTabs.beVisible()
+        if (binding.mainTabs.tabCount == 0) {
+            val inboxTab = binding.mainTabs.newTab().setText(R.string.inbox)
+            val filteredTab = binding.mainTabs.newTab().setText(R.string.filtered)
+            binding.mainTabs.addTab(inboxTab, currentTab == TAB_INBOX)
+            binding.mainTabs.addTab(filteredTab, currentTab == TAB_FILTERED)
+
+            binding.mainTabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+                override fun onTabSelected(tab: TabLayout.Tab?) {
+                    val newTab = tab?.position ?: TAB_INBOX
+                    if (currentTab != newTab) {
+                        currentTab = newTab
+                        loadTabConversations()
+                    }
+                }
+
+                override fun onTabUnselected(tab: TabLayout.Tab?) {}
+                override fun onTabReselected(tab: TabLayout.Tab?) {}
+            })
+        } else {
+            binding.mainTabs.getTabAt(currentTab)?.select()
+        }
+
+        updateTabColors()
+        updateTabBadges()
+    }
+
+    private fun loadTabConversations() {
+        ensureBackgroundThread {
+            val conversations = try {
+                if (config.enableFilterTab && currentTab == TAB_FILTERED) {
+                    conversationsDB.getFiltered().toMutableList() as ArrayList<Conversation>
+                } else if (config.enableFilterTab) {
+                    conversationsDB.getNonArchived().toMutableList() as ArrayList<Conversation>
+                } else {
+                    conversationsDB.getAllNonArchived().toMutableList() as ArrayList<Conversation>
+                }
+            } catch (_: Exception) {
+                ArrayList()
+            }
+
+            runOnUiThread {
+                setupConversations(conversations)
+                updateTabBadges()
+            }
+        }
+    }
+
+    private fun updateTabColors() {
+        if (!config.enableFilterTab) return
+        val primaryColor = getProperPrimaryColor()
+        val textColor = getProperTextColor()
+        binding.mainTabs.setSelectedTabIndicatorColor(primaryColor)
+        binding.mainTabs.setTabTextColors(textColor.adjustAlpha(0.6f), primaryColor)
+    }
+
+    private fun updateTabBadges() {
+        if (!config.enableFilterTab) return
+        ensureBackgroundThread {
+            val unreadFiltered = try {
+                conversationsDB.getUnreadFilteredCount()
+            } catch (_: Exception) {
+                0
+            }
+            runOnUiThread {
+                val filteredTab = binding.mainTabs.getTabAt(TAB_FILTERED) ?: return@runOnUiThread
+                val badge = filteredTab.orCreateBadge
+                if (unreadFiltered > 0) {
+                    badge.isVisible = true
+                    badge.number = unreadFiltered
+                    badge.backgroundColor = getProperPrimaryColor()
+                } else {
+                    badge.isVisible = false
+                }
+            }
+        }
     }
 
     private fun fadeOutSearch() {

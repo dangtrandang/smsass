@@ -25,6 +25,7 @@ import org.fossify.messages.extensions.markThreadMessagesRead
 import org.fossify.messages.extensions.markThreadMessagesUnread
 import org.fossify.messages.extensions.renameConversation
 import org.fossify.messages.extensions.updateConversationArchivedStatus
+import org.fossify.messages.extensions.updateConversationFilteredStatus
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.messaging.isShortCodeWithLetters
 import org.fossify.messages.models.Conversation
@@ -58,7 +59,8 @@ class ConversationsAdapter(
             findItem(R.id.cab_conversation_details).isVisible = isSingleSelection
             findItem(R.id.cab_mark_as_read).isVisible = selectedItems.any { !it.read }
             findItem(R.id.cab_mark_as_unread).isVisible = selectedItems.any { it.read }
-            findItem(R.id.cab_archive).isVisible = archiveAvailable
+            findItem(R.id.cab_archive).isVisible = archiveAvailable && selectedItems.none { it.isFiltered }
+            findItem(R.id.cab_restore_from_filtered).isVisible = selectedItems.any { it.isFiltered }
             checkPinBtnVisibility(this)
         }
     }
@@ -76,6 +78,7 @@ class ConversationsAdapter(
             R.id.cab_copy_number -> copyNumberToClipboard()
             R.id.cab_delete -> askConfirmDelete()
             R.id.cab_archive -> askConfirmArchive()
+            R.id.cab_restore_from_filtered -> restoreFilteredConversations()
             R.id.cab_rename_conversation -> renameConversation(selectedItems.first())
             R.id.cab_conversation_details ->
                 activity.launchConversationDetails(selectedItems.first().threadId)
@@ -198,6 +201,23 @@ class ConversationsAdapter(
                     refreshConversations()
                 }
             }
+        }
+    }
+
+    private fun restoreFilteredConversations() {
+        if (selectedKeys.isEmpty()) {
+            return
+        }
+
+        val conversationsToRestore =
+            currentList.filter { selectedKeys.contains(it.hashCode()) } as ArrayList<Conversation>
+        conversationsToRestore.forEach {
+            activity.updateConversationFilteredStatus(it.threadId, false)
+        }
+
+        activity.runOnUiThread {
+            refreshConversations()
+            finishActMode()
         }
     }
 

@@ -123,4 +123,12 @@
     <string name="group_mms">MMS nhóm</string>
     <string name="separate_messages">Gửi riêng lẻ</string>
     <string name="send_group_message">Định dạng tin nhắn nhóm</string>
+
+    <!-- Filter tab -->
+    <string name="inbox">Hộp thư đến</string>
+    <string name="filtered">Đã lọc</string>
+    <string name="no_filtered_conversations_found">Không có tin nhắn bị lọc nào</string>
+    <string name="enable_filter_tab">Bật tab Tin nhắn đã lọc / Spam</string>
+    <string name="restore_from_filtered">Khôi phục về Hộp thư đến</string>
+    <string name="restored_from_filtered">Đã khôi phục về Hộp thư đến</string>
 </resources>

@@ -409,12 +409,13 @@ fun Context.getConversations(
             val recipientIds =
                 rawIds.split(" ").filter { it.areDigitsOnly() }.map { it.toInt() }.toMutableList()
             val phoneNumbers = getThreadPhoneNumbers(recipientIds)
-            if (phoneNumbers.isEmpty() || phoneNumbers.any {
-                    isNumberBlocked(
-                        it,
-                        blockedNumbers
-                    )
-                }) {
+            val isNumberBlocked = phoneNumbers.any {
+                isNumberBlocked(
+                    it,
+                    blockedNumbers
+                )
+            }
+            if (phoneNumbers.isEmpty() || (isNumberBlocked && !config.enableFilterTab)) {
                 return@queryCursorUnsafe
             }
 
@@ -440,6 +441,7 @@ fun Context.getConversations(
                 phoneNumber = phoneNumbers.first(),
                 isArchived = archived,
                 unreadCount = unreadCount,
+                isFiltered = isNumberBlocked,
             )
             conversations.add(conversation)
         }
@@ -973,6 +975,14 @@ fun Context.updateConversationArchivedStatus(threadId: Long, archived: Boolean) 
     }
 }
 
+fun Context.updateConversationFilteredStatus(threadId: Long, filtered: Boolean) {
+    if (filtered) {
+        conversationsDB.moveToFiltered(threadId)
+    } else {
+        conversationsDB.restoreFromFiltered(threadId)
+    }
+}
+
 fun Context.deleteMessage(id: Long, isMMS: Boolean) {
     val uri = if (isMMS) Mms.CONTENT_URI else Sms.CONTENT_URI
     val selection = "${Sms._ID} = ?"
@@ -1258,11 +1268,16 @@ fun Context.insertOrUpdateConversation(
     cachedConv: Conversation? = conversationsDB.getConversationWithThreadId(conversation.threadId),
 ) {
     var updatedConv = conversation
-    if (cachedConv != null && cachedConv.usesCustomTitle) {
-        updatedConv = updatedConv.copy(
-            title = cachedConv.title,
-            usesCustomTitle = true
-        )
+    if (cachedConv != null) {
+        if (cachedConv.usesCustomTitle) {
+            updatedConv = updatedConv.copy(
+                title = cachedConv.title,
+                usesCustomTitle = true
+            )
+        }
+        if (cachedConv.isFiltered) {
+            updatedConv = updatedConv.copy(isFiltered = true)
+        }
     }
     conversationsDB.insertOrUpdate(updatedConv)
 }

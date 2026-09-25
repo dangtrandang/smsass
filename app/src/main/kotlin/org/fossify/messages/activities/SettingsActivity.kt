@@ -106,6 +106,7 @@ class SettingsActivity : SimpleActivity() {
         setupLanguage()
         setupManageBlockedNumbers()
         setupManageBlockedKeywords()
+        setupEnableFilterTab()
         setupChangeDateTimeFormat()
         setupFontSize()
         setupShowCharacterCounter()
@@ -227,6 +228,15 @@ class SettingsActivity : SimpleActivity() {
             } else {
                 FeatureLockedDialog(this@SettingsActivity) { }
             }
+        }
+    }
+
+    private fun setupEnableFilterTab() = binding.apply {
+        settingsEnableFilterTab.isChecked = config.enableFilterTab
+        settingsEnableFilterTabHolder.setOnClickListener {
+            settingsEnableFilterTab.toggle()
+            config.enableFilterTab = settingsEnableFilterTab.isChecked
+            refreshConversations()
         }
     }
 

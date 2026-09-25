@@ -143,6 +143,15 @@
     <string name="faq_3_text">Yes, you can schedule messages to be sent in the future by long pressing the Send button and picking the desired date and time.</string>
     <string name="faq_4_title">Why do my group message replies appear as individual texts to recipients?</string>
     <string name="faq_4_text">You need to enable \"Send group messages as MMS\" in the app settings. This will ensure that group messages are sent as proper MMS, allowing all participants to see each other\'s replies.</string>
+
+    <!-- Filter tab -->
+    <string name="inbox">Inbox</string>
+    <string name="filtered">Filtered</string>
+    <string name="no_filtered_conversations_found">No filtered messages found</string>
+    <string name="enable_filter_tab">Enable filtered / spam tab</string>
+    <string name="restore_from_filtered">Restore to inbox</string>
+    <string name="restored_from_filtered">Conversation restored to inbox</string>
+
     <!--
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res
