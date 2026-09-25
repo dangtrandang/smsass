@@ -1,44 +1,64 @@
-# Fossify Messages
+# smsass (Fossify Messages Extended)
+
 <img alt="Logo" src="graphics/icon.webp" width="120" />
 
-<a href='https://play.google.com/store/apps/details?id=org.fossify.messages'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height=80/></a> <a href="https://f-droid.org/packages/org.fossify.messages/"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on-en.svg" alt="Get it on F-Droid" height=80/></a> <a href="https://apt.izzysoft.de/fdroid/index/apk/org.fossify.messages"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height=80/></a>
+An enhanced fork of [Fossify Messages](https://github.com/FossifyOrg/Messages) featuring a dedicated **Filtered / Spam Tab**, silent keyword & sender filtering, and false-positive recovery.
 
-Fossify Messages is your trusted messaging companion, designed to enhance your messaging experience in various ways.
+---
 
-**📱 STAY CONNECTED WITH EASE:**  
-With Fossify Messages, you can effortlessly send SMS and MMS messages to stay connected with your loved ones. Enjoy SMS/MMS based group messaging and express yourself with photos, emojis, and quick greetings.
+## 🌟 New Features in this Fork (`smsass`)
 
-**🚫 BLOCK UNWANTED MESSAGES:**  
-Take control of your messaging experience with a robust blocking feature, easily preventing unwanted messages, even from unknown contacts. You can also export and import blocked numbers for hassle-free backup. Additionally, customize your experience by preventing messages with specific words or phrases from reaching your inbox.
+### 🛡️ Dedicated Filtered / Spam Tab (Tab Tin nhắn đã lọc)
+* **Dual-Tab Interface:** Màn hình chính phân tách rõ ràng giữa **[ Hộp thư đến / Inbox ]** và **[ Đã lọc / Filtered ]**.
+* **Badge đếm tin chưa đọc:** Tab "Đã lọc" hiển thị số lượng tin nhắn rác/chặn mới nhận được để tiện theo dõi.
+* **Chặn trong im lặng (Silent Interception):** Các tin nhắn vi phạm từ khóa hoặc số chặn sẽ được âm thầm đưa vào tab Đã lọc — **hoàn toàn không rung, không chuông, không hiện thông báo popup**.
+* **Không bị mất tin quan trọng (Anti-Drop / False Positive Safe):** Khắc phục triệt để nhược điểm drop/vứt bỏ tin nhắn của app gốc. Bạn có thể xem lại tin bất kỳ lúc nào nếu bị lọc nhầm (như mã OTP, biến động số dư ngân hàng).
+* **Khôi phục về Hộp thư đến (Restore to Inbox):** 
+  * Nút khôi phục ngay trên thanh công cụ khi đọc tin nhắn.
+  * Hỗ trợ chọn nhiều tin ngoài danh sách để khôi phục hàng loạt.
+* **Cài đặt bật/tắt linh hoạt:** Có công tắc bật/tắt tab lọc trong mục **Cài đặt (Settings)** -> *Bật tab Tin nhắn đã lọc / Spam*.
 
-**🔒 EFFORTLESS SMS BACKUP:**  
-Say goodbye to worries about losing important messages. Fossify Messages offers convenient SMS backup functionality by allowing you to export and import your messages. This feature ensures that you can easily switch devices without losing your valuable conversations.
+---
 
-**🚀 LIGHTNING-FAST AND LIGHTWEIGHT:**  
-Despite its powerful features, Fossify Messages boasts a remarkably small app size, making it quick and easy to download and install. Experience speed and efficiency while enjoying the peace of mind that comes with SMS backup.
+## 📱 Core Features (Tính năng cốt lõi)
 
-**🔐 ENHANCED PRIVACY:**  
-Customize what appears on your lock screen for added privacy. Choose to display only the sender, message content, or nothing at all. Your messages are in your control.
+* **Stay Connected with Ease:** Gửi nhận SMS/MMS nhanh chóng, hỗ trợ tin nhắn nhóm, hình ảnh, biểu tượng cảm xúc.
+* **Block Unwanted Messages:** Chặn số điện thoại, chặn số lạ và lọc từ khóa nội dung linh hoạt.
+* **Effortless SMS Backup:** Sao lưu và khôi phục tin nhắn dễ dàng (JSON/XML).
+* **Lightweight & Fast:** Dung lượng nhẹ, mượt mà, tối ưu pin.
+* **Enhanced Privacy:** Tùy chỉnh hiển thị thông báo trên màn hình khóa.
+* **Modern Design:** Giao diện Material Design tự động đổi màu theo theme hệ thống hoặc màu tùy chỉnh.
+* **100% Free & Open-Source:** Không quảng cáo, không theo dõi, bảo vệ quyền riêng tư người dùng.
 
-**🔍 EFFICIENT MESSAGE SEARCH:**  
-Say goodbye to endless scrolling through conversations. Fossify Messages simplifies message retrieval with a quick and efficient search feature. Find what you need, when you need it.
+---
 
-**🌈 MODERN DESIGN & USER-FRIENDLY INTERFACE:**  
-Enjoy a clean, modern design with a user-friendly interface. The app features a material design and a dark theme option, providing a visually appealing and comfortable user experience.
+## 🛠️ Build & Install
 
-**🌐 OPEN-SOURCE TRANSPARENCY:**  
-Your privacy is a top priority. Fossify Messages operates without requiring an internet connection, guaranteeing message security and stability. Our app is completely free of ads and does not request unnecessary permissions. Moreover, it is fully open-source, providing you with peace of mind, as you have access to the source code for security and privacy audits.
+### Build từ mã nguồn
+```bash
+git clone https://github.com/dangtrandang/smsass.git
+cd smsass
+./gradlew assembleDebug
+```
 
-Make the switch to Fossify Messages and experience messaging the way it should be – private, efficient, and user-friendly. Download now and join our community committed to safeguarding your messaging experience.
+File APK sẽ được tạo tại:
+`app/build/outputs/apk/foss/debug/messages-23-foss-debug.apk`
 
-➡️ Explore more Fossify apps: https://www.fossify.org<br>
-➡️ Open-Source Code: https://www.github.com/FossifyOrg<br>
-➡️ Join the community on Reddit: https://www.reddit.com/r/Fossify<br>
-➡️ Connect on Telegram: https://t.me/Fossify
+### Cài đặt qua ADB
 
-<div align="center">
-<img alt="App image" src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_en-US.png" width="30%">
-<img alt="App image" src="fastlane/metadata/android/en-US/images/phoneScreenshots/2_en-US.png" width="30%">
-<img alt="App image" src="fastlane/metadata/android/en-US/images/phoneScreenshots/3_en-US.png" width="30%">
-</div>
+**Máy thường:**
+```bash
+adb install -r app/build/outputs/apk/foss/debug/messages-23-foss-debug.apk
+```
 
+**Máy đã Root (bypass hạn chế bảo mật trên Xiaomi/MIUI/HyperOS):**
+```bash
+adb push app/build/outputs/apk/foss/debug/messages-23-foss-debug.apk /data/local/tmp/messages.apk
+adb shell "su -c 'chmod 777 /data/local/tmp/messages.apk && pm install -r -d -g /data/local/tmp/messages.apk'"
+```
+
+---
+
+## 📜 Giấy phép (License)
+Dự án được phân phối dưới giấy phép **GNU General Public License v3.0 (GPLv3)**.  
+Dựa trên nền tảng của [Fossify Messages](https://github.com/FossifyOrg/Messages) và [Simple SMS Messenger](https://github.com/SimpleMobileTools/Simple-SMS-Messenger).
